@@ -1,0 +1,14 @@
+.env
+.env.*
+.venv
+.git
+__pycache__
+*.pyc
+.pytest_cache
+.ipynb_checkpoints
+*.ipynb
+faiss_index
+faiss_index500
+data/index
+eval/results
+tests

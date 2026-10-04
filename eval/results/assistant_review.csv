@@ -1,0 +1,41 @@
+id,type,verdict,note
+q01,lookup,1,
+q02,lookup,1,
+q03,lookup,1,
+q04,lookup,1,"Correct, but adds LSH, which the guide describes as an approximate-search technique rather than a vector-database structure."
+q05,lookup,1,
+q06,lookup,1,
+q07,lookup,1,
+q08,lookup,1,
+q09,lookup,1,
+q10,lookup,1,
+q11,lookup,1,
+q12,lookup,1,
+q13,lookup,1,
+q14,lookup,1,
+q15,lookup,1,
+q16,lookup,1,
+q17,lookup,1,
+q18,lookup,1,
+q19,lookup,1,
+q20,lookup,1,
+q21,lookup,1,
+q22,lookup,1,
+p01,paraphrase,1,
+p02,paraphrase,0,Asked what to do instead of tables; answered about splitting documents and abbreviations. Never mentions bulleted lists / flat-level syntax. Retrieval also missed this one.
+p03,paraphrase,1,"Core answer correct (define abbreviations, standardize terminology). Cites the challenges page, omits 'set context' and hallucination."
+p04,paraphrase,1,
+p05,paraphrase,1,LSH correct. Padded with HNSW/KNN/cosine; listing cosine similarity as a way to be faster than exhaustive comparison is loose.
+p06,paraphrase,1,
+p07,paraphrase,1,"Includes the session-starter answer with the right example, but pads with generic advice (semantic search, headings)."
+p08,paraphrase,0,"Reference: set context, define abbreviations/terminology. Answer talks about tables, images and structure; does not mention abbreviations or terminology. Retrieval also missed this one."
+m01,multi_step,1,
+m02,multi_step,0.5,"Tables part correct. Screenshots part wrong: says audit/restructure instead of reduce resolution, remove redundant images, describe in text. Retrieval also missed the graphics passage."
+m03,multi_step,1,
+m04,multi_step,0.5,"Lists HNSW, KNN and cosine similarity and correctly says cosine measures the angle; omits locality-sensitive hashing, the fourth strategy listed."
+m05,multi_step,1,
+m06,multi_step,0.5,"Second part wrong: the first step is an audit of existing documents; the answer says 'optimize documents'. First part is a reasonable reading of the challenges list. Also cites [p.12], a page that was never retrieved."
+m07,multi_step,1,
+m08,multi_step,1,
+m09,multi_step,1,
+m10,multi_step,1,

@@ -1,0 +1,32 @@
+# secrets: never commit the API key
+.env
+.env.*
+!.env.example
+
+# the source PDF is AWS copyrighted material; download it yourself (see README)
+document.pdf
+data/*.pdf
+
+# python / tooling
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ipynb_checkpoints/
+*.egg-info/
+.DS_Store
+
+# built artifacts and local run outputs
+data/index/
+faiss_index/
+faiss_index500/
+agent_queries.csv
+agent_runs.csv
+tool_log.csv
+
+# the original exploration files stay in place for local use; clean copies are committed under notebooks/
+/RAG.ipynb
+/workflow.ipynb
+/rag.py
+/eval_data.py
+/main.py
