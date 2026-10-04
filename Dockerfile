@@ -1,4 +1,4 @@
-# Document Q&A service.  Not built in CI yet -- see README "Docker" for the exact commands.
+# Document Q&A service. Built and run locally (see README "Docker"); not built in CI.
 FROM python:3.12-slim
 
 ENV PYTHONUNBUFFERED=1 \

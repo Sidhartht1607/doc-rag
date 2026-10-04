@@ -472,24 +472,42 @@ citation parser applies to old runs. The stored runs have the PDF excerpts remov
 
 ```bash
 docker build -t doc-rag .
-docker run --rm -p 8000:8000 --env-file .env -v "$PWD/document.pdf:/app/document.pdf:ro" doc-rag
+docker run --rm -p 8000:8000 \
+  -v "$PWD/.env:/app/.env:ro" -v "$PWD/document.pdf:/app/document.pdf:ro" doc-rag
 ```
 
-**Not built or run yet**, so treat the Dockerfile as a careful draft. It installs CPU-only PyTorch and filters the CUDA wheels out of `requirements.txt`
-(exported from `uv.lock`), bakes in both models, and builds the index on first start from the mounted PDF.
+Mount `.env` as a file instead of using `--env-file`: Docker's `--env-file` rejects lines such as
+`GROQ_API_KEY = ...` (spaces around `=`), while the app's own loader accepts them. The image does not contain
+`.env` or the PDF; both are supplied at run time.
+
+**Built and checked on 2026-10-04** (Apple-silicon Mac, Docker Desktop 29.2, `linux/arm64`):
+- The build succeeded on the first try. The image is 3.13 GB, with CPU-only PyTorch (`2.14.1+cpu`) and both
+  models baked in (507 MB); it holds no `.env`, no PDF and no key-like environment variables.
+- A container started from it was ready in 21.5 s, including building the index from the mounted PDF, reported
+  `healthy`, and used about 545 MB of memory.
+- `POST /ask` answered a real question with a verified `[p.12]` citation, abstained on "What is the refund
+  policy?", and returned 422 for a too-short question.
+- `python -m rag_app.evaluate retrieval` inside the Linux container printed a table **identical** to the one
+  from macOS on all 13 lines, so the results do not depend on the operating system or the PyTorch build.
+
+Not checked: the `linux/amd64` build (the CUDA-filtering step assumes the CPU wheel index has the pinned PyTorch
+version for that platform), a cold start with no network, and behaviour under concurrent requests.
 
 ## Publishing to GitHub
 
 This folder is its own git repository (created with `git init` inside the project, because the enclosing
-repository on this machine is the **home directory**; never run `git add` from there). There is one local
-commit and no remote. To publish, create an empty repository on GitHub, then:
+repository on this machine is the **home directory**; never run `git add` from there). It is pushed to a
+**private** GitHub repository, `Sidhartht1607/doc-rag`, on branch `main` (created and pushed with the `gh` CLI;
+GitHub holds 40 files and none of `.env`, the PDF or the indexes). To make it public, review the licence points
+below first, then change the visibility on GitHub.
 
-```bash
-git remote add origin git@github.com:<you>/<repo>.git
-git push -u origin main
-```
+Things to settle before making it public:
+- the PDF is AWS copyrighted material and is not in the repo, but `eval/questions.json` holds short verbatim
+  phrases from it as evidence;
+- the questions and reference answers were drafted by an AI assistant, and the grading is the assistant's
+  (see `graded_by` in `eval/results/grading.csv`);
+- the repo has no `LICENSE` file yet.
 
-Before pushing, run `git status` and `git ls-files`: `.env`, `document.pdf` and the indexes must not appear.
 The original exploration files at the project root are gitignored; the committed copies live in `notebooks/` with
 their outputs cleared, because the outputs contain the PDF's text.
 
@@ -586,6 +604,6 @@ retrieval evaluation took about 23 seconds, which is not a latency figure)
 
 ### Product and delivery
 - Several documents (per-document filters and metadata).
-- CI that runs the tests (with cached models), a Docker image that has actually been built and published, and a
-  persistent index volume.
+- CI that runs the tests (with cached models), a published Docker image (it builds and runs locally, see above;
+  the `amd64` build is untested), and a persistent index volume.
 - Swap the source for a document that can be redistributed, so the repo runs without a manual download.
