@@ -9,6 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       HF_HOME: ${{ github.workspace }}/.hf
+      PYTHONPATH: ${{ github.workspace }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
