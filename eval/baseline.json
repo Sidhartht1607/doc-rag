@@ -1,7 +1,7 @@
 {
   "mode": "hybrid_rerank",
   "k": 4,
-  "recall@4": 0.9,
+  "recall@4": 0.95,
   "mrr@4": 0.78125,
   "dense_recall@4": 0.825,
   "n_questions": 40
