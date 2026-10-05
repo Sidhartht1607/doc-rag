@@ -35,3 +35,6 @@ tool_log.csv
 /rag.py
 /eval_data.py
 /main.py
+mlruns/
+mlartifacts/
+mlflow.db
