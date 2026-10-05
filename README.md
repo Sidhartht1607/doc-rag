@@ -505,7 +505,7 @@ with `pip install -e ".[guardrails]"` and `python -m spacy download en_core_web_
 | Flag | What it does |
 |---|---|
 | `PII_REDACTION=1` | Presidio replaces card numbers (Luhn-checked), emails, phones, IPs, IBANs, SSNs and full names in the question with tags like `<CREDIT_CARD>` **before** the LLM, the logs or the traces see it. The response carries `pii_redacted`. |
-| `FAITHFULNESS_CHECK=1` | A second model (`JUDGE_PROVIDER` / `JUDGE_MODEL`, default Groq `llama-3.3-70b-versatile`) splits the answer into claims and checks each against the retrieved passages. The response carries `faithfulness` (0-1) and `unsupported_claims`. `MIN_FAITHFULNESS` turns the score into an abstention (`status: low_faithfulness`); leave it unset until you have calibrated it. |
+| `FAITHFULNESS_CHECK=1` | A second model (`JUDGE_PROVIDER` / `JUDGE_MODEL`, default Groq `openai/gpt-oss-120b`) splits the answer into claims and checks each against the retrieved passages. The response carries `faithfulness` (0-1) and `unsupported_claims`. `MIN_FAITHFULNESS` turns the score into an abstention (`status: low_faithfulness`); leave it unset until you have calibrated it. |
 | `MLFLOW_TRACKING_URI=sqlite:///mlflow.db` | One MLflow trace per `/ask` with every LLM and tool span, tagged with abstained, faithfulness, unverified citations, PII types, latency and tokens. View it with `mlflow server --backend-store-uri sqlite:///mlflow.db`. `python -m rag_app.monitor` prints request count, abstain rate, mean faithfulness, p50/p95 latency, tokens and PII counts. |
 
 **PII measured** (`eval/pii_questions.json`: 20 questions with planted cards, emails, phones, names, an SSN, an IP and an
@@ -515,10 +515,33 @@ measuring: the score threshold is 0.4 because phone numbers score below 0.6 and 
 redacted only when it is two or more words, because spaCy tagged "Terraform" as a person at the same score as real
 names. The cost: a lone first name is not redacted.
 
-**Not done yet:** the faithfulness judge has only been tested with a scripted judge, not against a real model, and it
-has not been calibrated. Calibrating means hand-grading the 40 answerable rows in `grading.csv`, running the judge on
-the same answers and reporting agreement before trusting any `MIN_FAITHFULNESS`. No monitoring numbers are reported
-because no real traffic has been run through tracing yet.
+**Faithfulness judge, validated** (`eval/results/faithfulness_calibration.csv`; judge = Groq `openai/gpt-oss-120b`,
+answerer = `gpt-5-nano`, a different model). The 40 stored answerable answers were graded claim by claim against the
+passages they were written from, **by Claude, not by a human**, so treat the grades as a second opinion and
+re-grade them yourself before relying on the number.
+- The judge and the grader agreed on **34 / 40 (85%)** answers being fully supported or not.
+- The grader found 4 answers with an unsupported claim (p02, p08, m02, m06). The judge caught 1 of them (m06,
+  which names the wrong "first step"); it missed the other 3. It also flagged 3 answers (q03, q08, m01) that the
+  grader considered supported, borderline paraphrases. So its scores are not reliable enough to block answers,
+  and `MIN_FAITHFULNESS` stays unset. 4 bad answers is a small sample.
+- A planted check works: with the correct passage, an answer scored 1.0; adding one invented sentence ("lists must
+  never exceed ten items") dropped it to 0.5 and named that claim.
+
+**Monitoring snapshot** (2026-10-05, `python -m rag_app.monitor`, after running the 50 eval and 20 PII questions
+through `/ask` with all three guardrails on, `eval/experiments/run_traffic.py`; `gpt-5-nano` answers):
+
+| Metric | Value |
+|---|---|
+| Requests | 70 |
+| Abstain rate | 25.7% (10 of the 50 eval questions are unanswerable by design) |
+| Mean faithfulness (answered requests) | 0.995 |
+| Requests with an unverified citation | 2.9% |
+| Latency p50 / p95 (includes the judge call) | 5.97 s / 8.86 s |
+| Mean input / output tokens | 1374 / 355 |
+| Requests with PII redacted | 20 (email 6, phone 6, person 5, card 5, IBAN 1, IP 1) |
+
+The judge is the weak link: a mean of 0.995 mostly shows it rarely flags anything, which the calibration above
+says is not the same as answers being faithful.
 
 ## Continuous integration
 

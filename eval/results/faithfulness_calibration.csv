@@ -1,0 +1,41 @@
+id,graded_by,supported,judge_score,judge_says_supported,agree,unsupported_judge_claims,notes
+q01,Claude (an AI; not a human),1,1.0,1,1,,
+q02,Claude (an AI; not a human),1,1.0,1,1,,
+q03,Claude (an AI; not a human),1,0.67,0,0,"In RAG-based generative AI, vector databases serve as external sources that provide retrieval capabilities, helping incorporate relevant information from knowledge bases or search systems into AI responses.","Grader: supported (vector databases are listed as external sources, p.6). Judge flagged it: borderline paraphrase."
+q04,Claude (an AI; not a human),1,1.0,1,1,,
+q05,Claude (an AI; not a human),1,1.0,1,1,,
+q06,Claude (an AI; not a human),1,1.0,1,1,,
+q07,Claude (an AI; not a human),1,1.0,1,1,,
+q08,Claude (an AI; not a human),1,0.67,0,0,Context engineering is optimizing the context delivery process at the system level to improve RAG performance.,Grader: supported (context engineering is defined as optimizing context delivery at system level; 'to improve RAG performance' is implied). Judge flagged it.
+q09,Claude (an AI; not a human),1,1.0,1,1,,
+q10,Claude (an AI; not a human),1,1.0,1,1,,
+q11,Claude (an AI; not a human),1,1.0,1,1,,
+q12,Claude (an AI; not a human),1,1.0,1,1,,
+q13,Claude (an AI; not a human),1,1.0,1,1,,
+q14,Claude (an AI; not a human),1,1.0,1,1,,
+q15,Claude (an AI; not a human),1,1.0,1,1,,
+q16,Claude (an AI; not a human),1,1.0,1,1,,
+q17,Claude (an AI; not a human),1,1.0,1,1,,
+q18,Claude (an AI; not a human),1,1.0,1,1,,
+q19,Claude (an AI; not a human),1,1.0,1,1,,
+q20,Claude (an AI; not a human),1,1.0,1,1,,
+q21,Claude (an AI; not a human),1,1.0,1,1,,
+q22,Claude (an AI; not a human),1,1.0,1,1,,
+p01,Claude (an AI; not a human),1,1.0,1,1,,
+p02,Claude (an AI; not a human),0,1.0,1,0,,"Claims splitting big documents 'avoids one big multi-topic grid'; the guide's advice on tables (bulleted lists) was never used, so the answer misses the question and links two unrelated ideas."
+p03,Claude (an AI; not a human),1,1.0,1,1,,
+p04,Claude (an AI; not a human),1,1.0,1,1,,
+p05,Claude (an AI; not a human),1,1.0,1,1,,
+p06,Claude (an AI; not a human),1,1.0,1,1,,
+p07,Claude (an AI; not a human),1,1.0,1,1,,
+p08,Claude (an AI; not a human),0,1.0,1,0,,"Borderline. Every listed practice is in the text, but the passages tie them to easier digestion, not to fewer made-up answers; 'nested tables' is also an addition."
+m01,Claude (an AI; not a human),1,0.8,0,0,reinforced by FAQ note on summaries enhancing RAG performance and semantic search.,Grader: supported (p.15 states the summaries claim). Judge flagged the 'FAQ note' sentence.
+m02,Claude (an AI; not a human),0,1.0,1,0,,"For screenshots it advises restructuring with headings; the passage actually says reduce resolution, remove redundant images and describe them in text."
+m03,Claude (an AI; not a human),1,1.0,1,1,,
+m04,Claude (an AI; not a human),1,1.0,1,1,,
+m05,Claude (an AI; not a human),1,1.0,1,1,,
+m06,Claude (an AI; not a human),0,0.75,0,1,"The guide's first step to fix raw document issues is to optimize them for RAG applications by making them structured, unambiguous, and more relevant for AI models.",Says the first step is to 'optimize documents'; the guide's first step is to audit existing documents (p.16).
+m07,Claude (an AI; not a human),1,1.0,1,1,,
+m08,Claude (an AI; not a human),1,1.0,1,1,,
+m09,Claude (an AI; not a human),1,1.0,1,1,,
+m10,Claude (an AI; not a human),1,1.0,1,1,,

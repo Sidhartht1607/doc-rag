@@ -39,7 +39,7 @@ class Settings:
     pii_redaction: bool = False        # PII_REDACTION=1: redact the question before the LLM and the traces
     faithfulness_check: bool = False   # FAITHFULNESS_CHECK=1: a second model scores each answer's grounding
     judge_provider: str = "groq"       # must differ from the answerer; "groq" or "openai"
-    judge_model: str = "llama-3.3-70b-versatile"
+    judge_model: str = "openai/gpt-oss-120b"
     min_faithfulness: float | None = None   # below this the answer is replaced by the abstain phrase; set after calibrating
 
 
@@ -62,6 +62,6 @@ def get_settings() -> Settings:
         pii_redaction=os.getenv("PII_REDACTION") == "1",
         faithfulness_check=os.getenv("FAITHFULNESS_CHECK") == "1",
         judge_provider=os.getenv("JUDGE_PROVIDER", "groq"),
-        judge_model=os.getenv("JUDGE_MODEL", "llama-3.3-70b-versatile"),
+        judge_model=os.getenv("JUDGE_MODEL", "openai/gpt-oss-120b"),
         min_faithfulness=_env_float("MIN_FAITHFULNESS"),
     )
