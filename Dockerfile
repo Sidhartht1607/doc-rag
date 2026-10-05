@@ -1,4 +1,4 @@
-# Document Q&A service. Built and run locally (see README "Docker"); not built in CI.
+# Document Q&A service. Built and smoke-tested in CI (.github/workflows/ci.yml); see README "Docker".
 FROM python:3.12-slim
 
 ENV PYTHONUNBUFFERED=1 \

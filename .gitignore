@@ -2,6 +2,11 @@
 .env
 .env.*
 !.env.example
+*.pem
+*.key
+*.p12
+secrets/
+credentials*.json
 
 # the source PDF is AWS copyrighted material; download it yourself (see README)
 document.pdf

@@ -1,3 +1,5 @@
+![CI](https://github.com/Sidhartht1607/doc-rag/actions/workflows/ci.yml/badge.svg)
+
 # Document Q&A: a RAG service that cites pages and abstains
 
 Ask questions about a PDF and get an answer **with page citations**, or a plain "I could not find this in the
@@ -408,11 +410,13 @@ The LLM is OpenAI (`OPENAI_API_KEY`, default model `gpt-5-nano`, `OPENAI_REASONI
 `gpt-5-nano` is a reasoning model, so it takes no temperature setting and costs hidden reasoning tokens;
 `minimal` effort is cheapest and `low` was used for the results above.
 
-Get the PDF: search for *"Writing best practices to optimize RAG applications"* in AWS Prescriptive Guidance,
-download it, and save it as `document.pdf` in the project root (it is gitignored: AWS owns the copyright).
-Page numbers, chunks and every result below depend on the exact file. The copy used here has SHA-256
+Get the PDF: run `bash scripts/fetch_document.sh` (it downloads *"Writing best practices to optimize RAG
+applications"* from [AWS Prescriptive Guidance](https://docs.aws.amazon.com/pdfs/prescriptive-guidance/latest/writing-best-practices-rag/writing-best-practices-rag.pdf)
+to `document.pdf`; the file is gitignored because AWS owns the copyright, and the repo never redistributes it).
+Any PDF works for the service itself (set `DOCUMENT_PATH`), but page numbers, chunks and every result below depend
+on the exact file. The copy used here has SHA-256
 `064e6abca87ddeec3d65f000d66ff42c55d6a4c232a7257fa4d6721479072bd6` (check with `shasum -a 256 document.pdf`);
-a different revision will shift pages and may change the numbers.
+AWS has since revised the PDF; the four slow tests still pass on the newer revision, but the tables below are from the pinned copy.
 
 ```bash
 python -m rag_app.evaluate retrieval     # builds the index on first use, prints the retrieval table
@@ -492,6 +496,18 @@ Mount `.env` as a file instead of using `--env-file`: Docker's `--env-file` reje
 
 Not checked: the `linux/amd64` build (the CUDA-filtering step assumes the CPU wheel index has the pinned PyTorch
 version for that platform), a cold start with no network, and behaviour under concurrent requests.
+
+## Continuous integration
+
+`.github/workflows/ci.yml` runs on every push and pull request, with no API keys or secrets (the tests use stub
+retrievers and a scripted chat model, so CI never calls an LLM):
+1. **test**: installs CPU-only PyTorch, runs the 33 fast tests, downloads the PDF with `scripts/fetch_document.sh`,
+   then runs the 4 slow tests, including the Recall@4 / MRR@4 regression guard against `eval/baseline.json`.
+2. **docker**: builds the image, starts it and checks `GET /health`; on pushes to `main` it pushes the image to
+   GitHub Container Registry using the built-in `GITHUB_TOKEN`.
+
+Secrets live only in `.env` (gitignored; `.env.example` has placeholders). Never commit keys: pass them to
+containers at run time.
 
 ## Publishing to GitHub
 
