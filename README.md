@@ -15,6 +15,13 @@ The test document is *AWS Prescriptive Guidance: Writing best practices to optim
 > and 35 of 40 answers were correct under a strict 1/0 rubric. **Those answers were graded by the AI assistant
 > at the owner's request, and no human has checked the grading yet**, so treat correctness as provisional.
 > The design choices are explained in [Understanding the choices](#understanding-the-choices).
+>
+> **Since those numbers:** CI now runs the tests and the Recall@4 / MRR@4 guard on every push and builds the
+> Docker image ([Continuous integration](#continuous-integration)). Optional guardrails (PII redaction, a
+> faithfulness judge, MLflow traces) are off by default ([Guardrails and tracing](#guardrails-and-tracing-optional)).
+> The judge is not trustworthy yet: it agreed with an AI grader on 34 of 40 answers and caught 1 of 4 unsupported
+> answers, and no human has graded either. The tables below were measured on the original PDF revision; AWS has
+> since revised it, and only the 4 slow tests were re-run on the new one (they pass).
 
 ## Results
 
