@@ -68,3 +68,34 @@ def test_endless_searching_hits_the_step_cap_and_abstains():
     result = agent.ask("never answerable")
     assert result.status == "step_limit" and result.abstained
     assert len(agent.retriever.queries) <= 3, "step cap should stop the loop after a few searches"
+
+
+def test_faithfulness_judge_scores_the_answer_and_lists_unsupported_claims():
+    from rag_app.guardrails import Claim, Verdict
+    from test_guardrails import FakeJudge
+
+    verdict = Verdict(claims=[Claim(claim="Lists must be sequential.", supported=True),
+                              Claim(claim="Lists must be red.", supported=False)])
+    agent = agent_with([tool_call("lists"), AIMessage(content="Sequential [p.12]. Red [p.12].")],
+                       hits=[make_hit(page=12)], faithfulness_check=True)
+    agent._judge = FakeJudge(verdict)
+    result = agent.ask("Why should numbered lists be sequential?")
+    assert result.faithfulness == 0.5 and result.unsupported_claims == ["Lists must be red."]
+    assert result.status == "ok"
+
+
+def test_low_faithfulness_replaces_the_answer_only_when_a_floor_is_set():
+    from rag_app.guardrails import Claim, Verdict
+    from test_guardrails import FakeJudge
+
+    bad = Verdict(claims=[Claim(claim="invented", supported=False)])
+    agent = agent_with([tool_call("lists"), AIMessage(content="Invented [p.12].")], hits=[make_hit(page=12)],
+                       faithfulness_check=True, min_faithfulness=0.5)
+    agent._judge = FakeJudge(bad)
+    result = agent.ask("Why should numbered lists be sequential?")
+    assert result.abstained and result.answer == ABSTAIN_PHRASE and result.status == "low_faithfulness"
+
+
+def test_judge_is_skipped_when_the_flag_is_off():
+    agent = agent_with([tool_call("lists"), AIMessage(content="Fine [p.12].")], hits=[make_hit(page=12)])
+    assert agent.ask("Why should numbered lists be sequential?").faithfulness is None

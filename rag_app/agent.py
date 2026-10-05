@@ -77,6 +77,8 @@ class AskResult:
     latency_ms: int = 0
     input_tokens: int = 0
     output_tokens: int = 0
+    faithfulness: float | None = None                             # share of claims the passages support
+    unsupported_claims: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -120,10 +122,28 @@ class _SearchTool:
 
 
 class Agent:
-    def __init__(self, retriever: Retriever, llm=None, settings: Settings | None = None):
+    def __init__(self, retriever: Retriever, llm=None, settings: Settings | None = None, judge=None):
         self.retriever = retriever
         self.settings = settings or retriever.settings
         self._llm = llm
+        self._judge = judge
+
+    @property
+    def judge(self):
+        """The faithfulness judge: a different model from the answerer, built from JUDGE_PROVIDER / JUDGE_MODEL."""
+        if self._judge is None:
+            s = self.settings
+            if s.judge_provider == "openai":
+                from langchain_openai import ChatOpenAI
+
+                self._judge = ChatOpenAI(model=s.judge_model, max_retries=2)
+            elif s.judge_provider == "groq":
+                from langchain_groq import ChatGroq
+
+                self._judge = ChatGroq(model=s.judge_model, temperature=0, max_retries=2)
+            else:
+                raise ValueError(f"unknown JUDGE_PROVIDER {s.judge_provider!r}; use 'openai' or 'groq'")
+        return self._judge
 
     @property
     def llm(self):
@@ -204,10 +224,21 @@ class Agent:
                     "page": page, "section": match.chunk.section, "chunk_id": match.chunk.chunk_id,
                     "quote": match.chunk.text[:240],
                 })
+        faithfulness, unsupported = None, []
+        if self.settings.faithfulness_check and not abstained:
+            from .guardrails import judge_faithfulness
+
+            passages = [h.chunk.text for call in search.calls for h in call["hits"]]
+            faithfulness, claims = judge_faithfulness(self.judge, passages, answer)
+            unsupported = [c["claim"] for c in claims if not c["supported"]]
+            floor = self.settings.min_faithfulness
+            if floor is not None and faithfulness < floor:
+                answer, abstained, citations, status = ABSTAIN_PHRASE, True, [], "low_faithfulness"
         return AskResult(
             answer=answer, abstained=abstained, citations=citations,
             unverified_citation_pages=unverified, retrieved=retrieved,
             queries=[c["query"] for c in search.calls], llm_calls=llm_calls, status=status,
             latency_ms=int((time.time() - started) * 1000),
             input_tokens=in_tok, output_tokens=out_tok,
+            faithfulness=faithfulness, unsupported_claims=unsupported,
         )

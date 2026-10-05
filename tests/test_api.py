@@ -63,3 +63,18 @@ def test_rate_limit_becomes_503(client):
 def test_other_upstream_errors_become_502(client):
     use(FakeAgent(error=RuntimeError("boom")))
     assert client.post("/ask", json={"question": "anything here"}).status_code == 502
+
+
+def test_question_is_redacted_before_the_agent_sees_it(client, monkeypatch):
+    seen = []
+
+    class Spy(FakeAgent):
+        def ask(self, question):
+            seen.append(question)
+            return self.result
+
+    monkeypatch.setenv("PII_REDACTION", "1")
+    monkeypatch.setattr("rag_app.guardrails.redact", lambda q: (q.replace("4111", "<CREDIT_CARD>"), ["CREDIT_CARD"]))
+    use(Spy(AskResult(answer="ok", abstained=False)))
+    body = client.post("/ask", json={"question": "my card 4111 why slow?"}).json()
+    assert seen == ["my card <CREDIT_CARD> why slow?"] and body["pii_redacted"] == ["CREDIT_CARD"]

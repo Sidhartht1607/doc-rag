@@ -37,6 +37,9 @@ class AskResponse(BaseModel):
     latency_ms: int
     input_tokens: int = 0
     output_tokens: int = 0
+    faithfulness: float | None = None        # set when FAITHFULNESS_CHECK=1 and the agent answered
+    unsupported_claims: list[str] = []
+    pii_redacted: list[str] = []             # entity types redacted from the question (PII_REDACTION=1)
 
 
 @lru_cache(maxsize=1)
@@ -50,7 +53,43 @@ def get_agent() -> Agent:
 async def lifespan(app: FastAPI):
     if os.getenv("RAG_SKIP_WARMUP") != "1":
         get_agent()                           # first request should not pay the model-loading cost
+    if os.getenv("MLFLOW_TRACKING_URI"):      # tracing is opt-in, so tests and the default image stay offline
+        import mlflow
+
+        mlflow.set_experiment(os.getenv("MLFLOW_EXPERIMENT", "doc-rag"))
+        try:
+            mlflow.langchain.autolog()        # one span per LLM and tool call
+        except Exception:                     # tracing must never stop the service from starting
+            pass
     yield
+
+
+def _answer(agent: Agent, question: str, pii: list[str]) -> dict:
+    """`question` is already redacted, so a trace's recorded input never holds PII."""
+    result = agent.ask(question).to_dict()
+    result["pii_redacted"] = pii
+    return result
+
+
+def _traced_answer(agent: Agent, question: str, pii: list[str]) -> dict:
+    import mlflow
+
+    @mlflow.trace(name="ask")
+    def traced(agent: Agent, question: str, pii: list[str]) -> dict:
+        result = _answer(agent, question, pii)
+        mlflow.update_current_trace(tags={
+            "abstained": str(result["abstained"]),
+            "faithfulness": str(result.get("faithfulness")),
+            "unverified_citations": str(len(result["unverified_citation_pages"])),
+            "pii_types": ",".join(pii),
+            "status": result["status"],
+            "latency_ms": str(result["latency_ms"]),
+            "input_tokens": str(result["input_tokens"]),
+            "output_tokens": str(result["output_tokens"]),
+        })
+        return result
+
+    return traced(agent, question, pii)
 
 
 def create_app() -> FastAPI:
@@ -63,7 +102,14 @@ def create_app() -> FastAPI:
     @app.post("/ask", response_model=AskResponse)
     def ask(request: AskRequest, agent: Agent = Depends(get_agent)) -> dict:
         try:
-            return agent.ask(request.question).to_dict()
+            question, pii = request.question, []
+            if get_settings().pii_redaction:
+                from .guardrails import redact
+
+                question, pii = redact(question)      # redact first: traces record the function's arguments
+            if os.getenv("MLFLOW_TRACKING_URI"):
+                return _traced_answer(agent, question, pii)
+            return _answer(agent, question, pii)
         except Exception as exc:              # the LLM provider is the usual failure
             if type(exc).__name__ == "RateLimitError":
                 raise HTTPException(status_code=503, detail="The language model is rate limited. Try again shortly.")

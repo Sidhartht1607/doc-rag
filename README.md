@@ -497,6 +497,29 @@ Mount `.env` as a file instead of using `--env-file`: Docker's `--env-file` reje
 Not checked: the `linux/amd64` build (the CUDA-filtering step assumes the CPU wheel index has the pinned PyTorch
 version for that platform), a cold start with no network, and behaviour under concurrent requests.
 
+## Guardrails and tracing (optional)
+
+All three are off by default, so the base service, the Docker image and the numbers above are unchanged. Install
+with `pip install -e ".[guardrails]"` and `python -m spacy download en_core_web_md`, then set the flags in `.env`.
+
+| Flag | What it does |
+|---|---|
+| `PII_REDACTION=1` | Presidio replaces card numbers (Luhn-checked), emails, phones, IPs, IBANs, SSNs and full names in the question with tags like `<CREDIT_CARD>` **before** the LLM, the logs or the traces see it. The response carries `pii_redacted`. |
+| `FAITHFULNESS_CHECK=1` | A second model (`JUDGE_PROVIDER` / `JUDGE_MODEL`, default Groq `llama-3.3-70b-versatile`) splits the answer into claims and checks each against the retrieved passages. The response carries `faithfulness` (0-1) and `unsupported_claims`. `MIN_FAITHFULNESS` turns the score into an abstention (`status: low_faithfulness`); leave it unset until you have calibrated it. |
+| `MLFLOW_TRACKING_URI=sqlite:///mlflow.db` | One MLflow trace per `/ask` with every LLM and tool span, tagged with abstained, faithfulness, unverified citations, PII types, latency and tokens. View it with `mlflow server --backend-store-uri sqlite:///mlflow.db`. `python -m rag_app.monitor` prints request count, abstain rate, mean faithfulness, p50/p95 latency, tokens and PII counts. |
+
+**PII measured** (`eval/pii_questions.json`: 20 questions with planted cards, emails, phones, names, an SSN, an IP and an
+IBAN): all 20 planted values were removed from the text, 19 of 20 with the right entity type (one US SSN was tagged
+`PHONE_NUMBER`). **0 of the 50 eval questions were changed**, so no false positives. Two choices came from
+measuring: the score threshold is 0.4 because phone numbers score below 0.6 and were missed at 0.6, and a name is
+redacted only when it is two or more words, because spaCy tagged "Terraform" as a person at the same score as real
+names. The cost: a lone first name is not redacted.
+
+**Not done yet:** the faithfulness judge has only been tested with a scripted judge, not against a real model, and it
+has not been calibrated. Calibrating means hand-grading the 40 answerable rows in `grading.csv`, running the judge on
+the same answers and reporting agreement before trusting any `MIN_FAITHFULNESS`. No monitoring numbers are reported
+because no real traffic has been run through tracing yet.
+
 ## Continuous integration
 
 `.github/workflows/ci.yml` runs on every push and pull request, with no API keys or secrets (the tests use stub
@@ -530,8 +553,8 @@ their outputs cleared, because the outputs contain the PDF's text.
 ## Project layout
 
 ```
-rag_app/      parse.py chunk.py index.py bm25.py retrieve.py agent.py api.py evaluate.py config.py
-eval/         questions.json (50 questions)  baseline.json
+rag_app/      parse.py chunk.py index.py bm25.py retrieve.py agent.py api.py evaluate.py config.py guardrails.py monitor.py
+eval/         questions.json (50 questions)  baseline.json  pii_questions.json (20 planted-PII questions)
               results/ retrieval_results.{json,md}  agent_runs.jsonl  grading.csv  assistant_review.csv
 eval/experiments/  design_choices.py  overlap_check.py   (reproduce the numbers in "Understanding the choices")
 notebooks/    the exploration notebooks, outputs cleared, with the legacy rag.py / eval_data.py they import

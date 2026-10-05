@@ -24,7 +24,8 @@ jobs:
           TORCH="$(grep -E '^torch==' requirements.txt | cut -d' ' -f1 | cut -d';' -f1)"
           pip install "$TORCH" --index-url https://download.pytorch.org/whl/cpu
           grep -v -E '^(nvidia-|triton|cuda-|torch==)' requirements.txt > requirements.cpu.txt
-          pip install -r requirements.cpu.txt pytest httpx
+          pip install -r requirements.cpu.txt pytest httpx presidio-analyzer presidio-anonymizer spacy mlflow pandas
+          python -m spacy download en_core_web_md
 
       - name: Fast tests (stubs, no LLM, no PDF)
         run: pytest -m "not slow" -q
