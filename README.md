@@ -494,8 +494,9 @@ Mount `.env` as a file instead of using `--env-file`: Docker's `--env-file` reje
 - `python -m rag_app.evaluate retrieval` inside the Linux container printed a table **identical** to the one
   from macOS on all 13 lines, so the results do not depend on the operating system or the PyTorch build.
 
-Not checked: the `linux/amd64` build (the CUDA-filtering step assumes the CPU wheel index has the pinned PyTorch
-version for that platform), a cold start with no network, and behaviour under concurrent requests.
+The `linux/amd64` build is checked in CI (GitHub's Ubuntu runner builds the image, starts it and gets a 200 from
+`/health`); that check does not run the retrieval evaluation inside the container. Not checked: a cold start with no
+network, and behaviour under concurrent requests.
 
 ## Guardrails and tracing (optional)
 
@@ -612,14 +613,16 @@ search, rerank and the LLM calls)
   (this is exactly what happened to the Groq free tier during development).
 - Request-size and timeout limits, CORS settings, and tests for 401, 403 and 429 responses.
 
-**3. Tracing and observability** (today: each response carries the queries the agent ran, token counts and a total
-`latency_ms`, and nothing else is recorded)
-- One trace per request with a span for each stage: query embedding, FAISS, BM25, fusion, rerank, each LLM call
-  and each tool call. OpenTelemetry or LangSmith both fit this graph.
-- Log token usage and estimated cost per request, a request id that appears in the logs and the response,
-  and structured logs for abstentions, step-limit hits and rate-limit errors.
-- Alert on the signals the experiments showed matter: the share of answers that abstain, answers with an
-  unverified citation, and requests that hit the step cap.
+**3. Tracing and observability** (today: with `MLFLOW_TRACKING_URI` set, every `/ask` writes one MLflow trace with
+the LLM and tool spans and tags for abstention, faithfulness, unverified citations, PII types, latency and tokens,
+and `python -m rag_app.monitor` summarises them; see [Guardrails and tracing](#guardrails-and-tracing-optional).
+Tracing is off by default.)
+- Still missing: spans for the stages inside a search (query embedding, FAISS, BM25, fusion, rerank), which the
+  LangChain auto-logging does not see.
+- Estimated cost per request, a request id that appears in the logs and the response, and structured logs for
+  step-limit hits and rate-limit errors.
+- Alerting on the signals the experiments showed matter (abstention share, unverified citations, step-cap hits):
+  `monitor.py` reports them on demand, but nothing watches or alerts.
 
 **4. Latency benchmarks** (today: never measured; the only timing so far is that the 160 searches of the
 retrieval evaluation took about 23 seconds, which is not a latency figure)
@@ -643,9 +646,10 @@ retrieval evaluation took about 23 seconds, which is not a latency figure)
   confidence intervals, and keep a held-out split for the abstention threshold.
 
 ### Manual steps that could be automated
-- **Grading:** an LLM judge could pre-grade every answer and leave a human only the disagreements and a random
-  sample. It needs a judge model different from the answering model, which the current OpenAI key (one model
-  only) cannot provide yet.
+- **Grading:** a judge now exists (`FAITHFULNESS_CHECK=1`, Groq `openai/gpt-oss-120b`, a different model from the
+  answerer) but it is not good enough to replace a human: it agreed with an AI grader on 34 of 40 answers and caught
+  1 of 4 answers with an unsupported claim. A human still has to grade `grading.csv`, and the judge's own
+  calibration was graded by an AI.
 - **README tables** are copied by hand from the files in `eval/results/`; generate them from those files so the
   numbers cannot drift.
 - **Re-running the evaluations** after each change (retrieval is free and takes seconds; the agent run costs
@@ -653,7 +657,9 @@ retrieval evaluation took about 23 seconds, which is not a latency figure)
 - **Updating the baseline** (`--write-baseline`) is a manual decision today; require it to appear in the pull
   request that improves quality.
 - **Clearing notebook outputs** before committing: a pre-commit hook instead of remembering.
-- **Fetching the PDF:** the checksum is documented, so a script could download and verify it if the licence allows.
+- **Fetching the PDF:** done for CI by `scripts/fetch_document.sh`, which downloads it from AWS at run time without
+  storing it. It only warns when AWS revises the file; a pinned, verified copy would need a place to host it that
+  the licence allows.
 
 ### Retrieval and agent quality
 - The paraphrase misses (p02, p06, p08) point to query rewriting or multi-query/HyDE, a larger reranker, or an
