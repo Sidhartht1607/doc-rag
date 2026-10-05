@@ -665,7 +665,20 @@ retrieval evaluation took about 23 seconds, which is not a latency figure)
   conversation memory.
 
 ### Product and delivery
+**Done:** CI runs on every push and pull request (see [Continuous integration](#continuous-integration)): the 33 fast tests,
+the 4 slow tests including the Recall@4 / MRR@4 regression guard (with the embedding and reranker models cached
+between runs), and a Docker build on Ubuntu (`amd64`) that starts the container and checks `/health`. On pushes to
+`main` the image is pushed to GitHub Container Registry as `ghcr.io/sidhartht1607/doc-rag`. A pull request that
+raises the Recall@4 baseline above what retrieval achieves fails the guard (PR #1, closed unmerged on purpose).
+
+**Still open:**
+- Make the image pullable by others: the GHCR package follows the repo's visibility, so it needs to be set to
+  public in the package settings (the repo itself is still private), and the `docker pull` line verified from a
+  machine that is not logged in.
+- Put the optional guardrails in the image: Presidio and its spaCy model are not installed in the `Dockerfile`
+  (roughly 0.5 GB more), so `PII_REDACTION=1` only works outside the container today.
+- A persistent index volume (the index is rebuilt on first start of a fresh container unless `/app/data/index` is
+  mounted).
 - Several documents (per-document filters and metadata).
-- CI that runs the tests (with cached models), a published Docker image (it builds and runs locally, see above;
-  the `amd64` build is untested), and a persistent index volume.
-- Swap the source for a document that can be redistributed, so the repo runs without a manual download.
+- Swap the source for a document that can be redistributed. CI downloads the AWS PDF at run time and the repo
+  never stores it, but the tests and results still depend on a file the repo does not own.
