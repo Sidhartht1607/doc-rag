@@ -170,7 +170,8 @@ What the experiments showed, including the parts that did not go as hoped.
   shared blind spots are possible. A human has not yet checked it; `eval/results/grading.csv` says who graded
   each row.
 - `eval/questions.json` contains short verbatim phrases from the PDF as evidence (about 100, each under 150
-  characters). Remove them if you must not redistribute even short quotes.
+  characters). They remain AWS's copyrighted text, are included only as short evaluation evidence, and are not
+  covered by this repository's MIT license. Remove them if you must not redistribute even short quotes.
 
 ## Understanding the choices
 
@@ -576,7 +577,7 @@ Things to settle before making it public:
   phrases from it as evidence;
 - the questions and reference answers were drafted by an AI assistant, and the grading is the assistant's
   (see `graded_by` in `eval/results/grading.csv`);
-- the repo has no `LICENSE` file yet.
+- ~~the repo has no `LICENSE` file yet~~: done, MIT (see `LICENSE`).
 
 The original exploration files at the project root are gitignored; the committed copies live in `notebooks/` with
 their outputs cleared, because the outputs contain the PDF's text.
