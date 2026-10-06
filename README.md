@@ -684,11 +684,11 @@ the 4 slow tests including the Recall@4 / MRR@4 regression guard (with the embed
 between runs), and a Docker build on Ubuntu (`amd64`) that starts the container and checks `/health`. On pushes to
 `main` the image is pushed to GitHub Container Registry as `ghcr.io/sidhartht1607/doc-rag`. A pull request that
 raises the Recall@4 baseline above what retrieval achieves fails the guard (PR #1, closed unmerged on purpose).
+The package is public (GHCR makes new packages private even for a public repo, so this was set by hand in the
+package settings); anonymous access to the tag list and the `latest` manifest was checked on 2026-10-06 through the
+registry API, without a logged-in session. A full `docker pull` from a logged-out machine has not been run.
 
 **Still open:**
-- Make the image pullable by others: the GHCR package follows the repo's visibility, so it needs to be set to
-  public in the package settings (the repo itself is now public), and the `docker pull` line verified from a
-  machine that is not logged in.
 - Put the optional guardrails in the image: Presidio and its spaCy model are not installed in the `Dockerfile`
   (roughly 0.5 GB more), so `PII_REDACTION=1` only works outside the container today.
 - A persistent index volume (the index is rebuilt on first start of a fresh container unless `/app/data/index` is
