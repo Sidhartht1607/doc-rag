@@ -568,11 +568,11 @@ containers at run time.
 
 This folder is its own git repository (created with `git init` inside the project, because the enclosing
 repository on this machine is the **home directory**; never run `git add` from there). It is pushed to a
-**private** GitHub repository, `Sidhartht1607/doc-rag`, on branch `main` (created and pushed with the `gh` CLI;
-GitHub holds 40 files and none of `.env`, the PDF or the indexes). To make it public, review the licence points
-below first, then change the visibility on GitHub.
+**public** GitHub repository, `Sidhartht1607/doc-rag`, on branch `main` (created and pushed with the `gh` CLI;
+GitHub holds 40 files and none of `.env`, the PDF or the indexes). It was made public on 2026-10-06, after the
+licence points below were reviewed.
 
-Things to settle before making it public:
+Points that were settled before making it public:
 - the PDF is AWS copyrighted material and is not in the repo, but `eval/questions.json` holds short verbatim
   phrases from it as evidence;
 - the questions and reference answers were drafted by an AI assistant, and the grading is the assistant's
@@ -687,7 +687,7 @@ raises the Recall@4 baseline above what retrieval achieves fails the guard (PR #
 
 **Still open:**
 - Make the image pullable by others: the GHCR package follows the repo's visibility, so it needs to be set to
-  public in the package settings (the repo itself is still private), and the `docker pull` line verified from a
+  public in the package settings (the repo itself is now public), and the `docker pull` line verified from a
   machine that is not logged in.
 - Put the optional guardrails in the image: Presidio and its spaCy model are not installed in the `Dockerfile`
   (roughly 0.5 GB more), so `PII_REDACTION=1` only works outside the container today.
