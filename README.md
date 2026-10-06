@@ -685,8 +685,8 @@ between runs), and a Docker build on Ubuntu (`amd64`) that starts the container 
 `main` the image is pushed to GitHub Container Registry as `ghcr.io/sidhartht1607/doc-rag`. A pull request that
 raises the Recall@4 baseline above what retrieval achieves fails the guard (PR #1, closed unmerged on purpose).
 The package is public (GHCR makes new packages private even for a public repo, so this was set by hand in the
-package settings); anonymous access to the tag list and the `latest` manifest was checked on 2026-10-06 through the
-registry API, without a logged-in session. A full `docker pull` from a logged-out machine has not been run.
+package settings); on 2026-10-06 `docker logout ghcr.io && docker pull ghcr.io/sidhartht1607/doc-rag:latest`
+completed on a logged-out machine (about 1 GB compressed).
 
 **Still open:**
 - Put the optional guardrails in the image: Presidio and its spaCy model are not installed in the `Dockerfile`
